@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>InvestmentBot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+ 
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-title">INVESTMENTBOT</div>
+    <div class="login-sub" id="login-sub">Sign in to your portfolio</div>
+ 
+    <div class="field" id="email-field" style="display:none">
+      <label>Email (for price alerts)</label>
+      <input type="email" id="auth-email" placeholder="you@gmail.com"/>
+    </div>
+    <div class="field">      
+      <label>Username</label>
+      <input type="text" id="auth-username" placeholder="wantam" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••" autocomplete="current-password"/>
+    </div>
+ 
+    <button class="btn" id="auth-btn" onclick="handleAuth()">SIGN IN</button>
+    <button class="btn btn-outline" id="auth-toggle-btn" onclick="toggleAuthMode()">CREATE ACCOUNT</button>
+    <div id="login-error"></div>
+ 
+    <div class="login-toggle">
+      <span id="auth-toggle-text"></span>
+    </div>
+  </div>
+</div>
+ 
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="logo">INVESTMENT<span>BOT</span></div>
+    <div class="header-right">
+      <div class="username-badge">logged in as <strong id="header-username"></strong></div>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+ 
+  <main>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card" id="stat-total">
+        <div class="stat-label">Total Portfolio Value</div>
+        <div class="stat-value" id="stat-total-val">—</div>
+      </div>
+      <div class="stat-card" id="stat-cost">
+        <div class="stat-label">Total Cost Basis</div>
+        <div class="stat-value" id="stat-cost-val">—</div>
+      </div>
+      <div class="stat-card" id="stat-pnl">
+        <div class="stat-label">Total Profit / Loss</div>
+        <div class="stat-value" id="stat-pnl-val">—</div>
+      </div>
+    </div>
+ 
+    <!-- Content grid -->
+    <div class="content-grid">
+      <!-- Left: table -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Investments</div>
+        </div>
+ 
+        <!-- Add form -->
+        <div class="add-form">
+          <div class="field">
+            <label>Coin ID</label>
+            <input type="text" id="add-name" placeholder="bitcoin"/>
+          </div>
+          <div class="field">
+            <label>Quantity</label>
+            <input type="number" id="add-amount" placeholder="0.5" step="any" min="0"/>
+          </div>
+          <div class="field">
+            <label>Buy Price (USD)</label>
+            <input type="number" id="add-price" placeholder="60000" step="any" min="0"/>
+          </div>
+          <button class="btn btn-sm" style="grid-column:1/-1;width:100%" onclick="addInvestment()">+ ADD INVESTMENT</button>
+        </div>
+ 
+        <table>
+          <thead>
+            <tr>
+              <th>Coin</th>
+              <th>Qty</th>
+              <th>Buy Price</th>
+              <th>Current</th>
+              <th>Value</th>
+              <th>P&amp;L</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="investments-tbody">
+            <tr class="loading-row"><td colspan="7">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+ 
+      <!-- Right: chart -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Allocation</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="portfolioChart"></canvas>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+ 
+<!-- Edit Modal -->
+<div id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title">EDIT INVESTMENT</div>
+    <input type="hidden" id="edit-id"/>
+    <div class="field">
+      <label>Coin ID</label>
+      <input type="text" id="edit-name"/>
+    </div>
+    <div class="field">
+      <label>Quantity</label>
+      <input type="number" id="edit-amount" step="any" min="0"/>
+    </div>
+    <div class="field">
+      <label>Buy Price (USD)</label>
+      <input type="number" id="edit-price" step="any" min="0"/>
+    </div>
+    <button class="btn" onclick="saveEdit()">SAVE CHANGES</button>
+  </div>
+</div>
+ 
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="script.js"></script> 
+
+</body>
+</html>
