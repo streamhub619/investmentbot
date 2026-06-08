@@ -40,6 +40,11 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-
+  
+  db-client:
+    image: adminer:latest
+    restart: always
+    ports:
+      - "8080:8080"
 volumes:
   postgres_data:
