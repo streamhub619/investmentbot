@@ -327,3 +327,45 @@ const API = 'http://localhost:3000';
     loadDashboard();
   }
 })();
+
+/*function showForgotPassword() {
+  document.querySelector('.login-box > .login-title').parentElement.querySelectorAll('.field, #auth-btn, #auth-toggle-btn, #login-error').forEach(el => el.style.display = 'none');
+  document.getElementById('forgot-form').style.display = 'block';
+}
+
+function hideForgotPassword() {
+  document.getElementById('forgot-form').style.display = 'none';
+  document.querySelectorAll('.login-box .field, #auth-btn, #auth-toggle-btn, #login-error').forEach(el => el.style.display = '');
+  if (!isRegisterMode) document.getElementById('email-field').style.display = 'none';
+}*/
+
+function showForgotPassword() {
+  document.getElementById('login-fields').style.display = 'none';
+  document.getElementById('forgot-form').style.display = 'block';
+}
+
+function hideForgotPassword() {
+  document.getElementById('forgot-form').style.display = 'none';
+  document.getElementById('login-fields').style.display = 'block';
+}
+
+async function requestPasswordReset() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const msgEl = document.getElementById('forgot-message');
+
+  if (!email) { msgEl.textContent = 'Email required.'; return; }
+
+  try {
+    const res = await fetch(API + '/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    msgEl.style.color = 'var(--accent)';
+    msgEl.textContent = data.message || 'Check your email.';
+  } catch (e) {
+    msgEl.style.color = 'var(--danger)';
+    msgEl.textContent = 'Could not connect to server.';
+  }
+}

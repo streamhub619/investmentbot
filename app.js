@@ -3,9 +3,12 @@ require("dotenv").config();
 const express = require("express");
 const pool = require("./db");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const { generateToken, authenticateToken } = require("./auth");
 const { getAllPrices } = require("./prices");
 const { startAlertCron } = require("./alerts");
+const { sendPasswordResetEmail } = require("./mailer");
  
 const app = express();
  
@@ -61,6 +64,16 @@ async function initDB() {
       coin TEXT NOT NULL,
       target_price NUMERIC NOT NULL,
       direction TEXT CHECK(direction IN ('above', 'below')) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
@@ -368,6 +381,78 @@ app.delete("/alerts/:id", authenticateToken, async (req, res) => {
     res.send("Alert deleted");
   } catch (err) {
     res.status(500).send("Error deleting alert");
+  }
+});
+
+// Request password reset
+app.post("/auth/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  try {
+    const userResult = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [email.trim().toLowerCase()]
+    );
+
+    // always respond the same way, even if user doesn't exist (prevents email enumeration)
+    if (userResult.rows.length === 0) {
+      return res.json({ message: "If that email exists, a reset link has been sent." });
+    }
+
+    const userId = userResult.rows[0].id;
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 mins
+
+    await pool.query(
+      "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
+      [userId, token, expiresAt]
+    );
+
+    await sendPasswordResetEmail(email.trim().toLowerCase(), token);
+
+    res.json({ message: "If that email exists, a reset link has been sent." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error processing password reset");
+  }
+});
+
+// Reset password using token
+app.post("/auth/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: "Token and new password are required" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM password_reset_tokens WHERE token = $1 AND expires_at > NOW()",
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid or expired reset token" });
+    }
+
+    const { user_id } = result.rows[0];
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, user_id]);
+
+    // delete the used token
+    await pool.query("DELETE FROM password_reset_tokens WHERE token = $1", [token]);
+
+    res.json({ message: "Password updated successfully. You can now log in." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error resetting password");
   }
 });
  

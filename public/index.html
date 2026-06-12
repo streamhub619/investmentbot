@@ -13,14 +13,16 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-title">INVESTMENTBOT</div>
-    <div class="login-sub" id="login-sub">Sign in to your portfolio</div>
- 
+  <div class="login-title">INVESTMENTBOT</div>
+  <div class="login-sub" id="login-sub">Sign in to your portfolio</div>
+
+  <!-- wrap these in a container -->
+  <div id="login-fields">
     <div class="field" id="email-field" style="display:none">
       <label>Email (for price alerts)</label>
       <input type="email" id="auth-email" placeholder="you@gmail.com"/>
     </div>
-    <div class="field">      
+    <div class="field">
       <label>Username</label>
       <input type="text" id="auth-username" placeholder="wantam" autocomplete="username"/>
     </div>
@@ -28,15 +30,28 @@
       <label>Password</label>
       <input type="password" id="auth-password" placeholder="••••••" autocomplete="current-password"/>
     </div>
- 
+
     <button class="btn" id="auth-btn" onclick="handleAuth()">SIGN IN</button>
     <button class="btn btn-outline" id="auth-toggle-btn" onclick="toggleAuthMode()">CREATE ACCOUNT</button>
     <div id="login-error"></div>
- 
+
     <div class="login-toggle">
-      <span id="auth-toggle-text"></span>
+      <span onclick="showForgotPassword()">Forgot password?</span>
     </div>
   </div>
+  <!-- end login-fields -->
+
+  <!-- Forgot password form -->
+  <div id="forgot-form" style="display:none">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="forgot-email" placeholder="you@gmail.com"/>
+    </div>
+    <button class="btn" onclick="requestPasswordReset()">SEND RESET LINK</button>
+    <button class="btn btn-outline" onclick="hideForgotPassword()">BACK TO LOGIN</button>
+    <div id="forgot-message" style="margin-top:10px; font-size:11px;"></div>
+  </div>
+</div>
 </div>
  
 <!-- DASHBOARD -->
