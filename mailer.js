@@ -16,8 +16,8 @@ async function sendPasswordResetEmail(to, resetToken) {
     return;
   }
 
-  const transporter = getTransporter();
-  const resetLink = `http://localhost:3000/reset-password.html?token=${resetToken}`;
+  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+  const resetLink = `${baseUrl}/reset-password.html?token=${resetToken}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
