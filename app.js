@@ -9,6 +9,8 @@ const { generateToken, authenticateToken } = require("./auth");
 const { getAllPrices } = require("./prices");
 const { startAlertCron } = require("./alerts");
 const { sendPasswordResetEmail } = require("./mailer");
+const { encryptKey } = require("./encryption");
+const { startSyncCron, syncAllExchanges, syncExchange } = require("./sync");
  
 const app = express();
  
@@ -55,6 +57,8 @@ async function initDB() {
  
   await pool.query(`ALTER TABLE investments ADD COLUMN IF NOT EXISTS purchase_price NUMERIC;`);
   await pool.query(`ALTER TABLE investments ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;`);
+  await pool.query(`ALTER TABLE investments ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';`);
+  await pool.query(`ALTER TABLE investments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();`);
  
   // then price_alerts
   await pool.query(`
@@ -77,11 +81,33 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
+
+  // unique constraint for upsert
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS investments_user_coin_source
+    ON investments (user_id, name, source);
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS exchange_connections (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      exchange TEXT NOT NULL,
+      api_key TEXT NOT NULL,
+      api_secret TEXT NOT NULL,
+      last_synced_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
  
   console.log("Database ready");
 }
  
-initDB().then(() => startAlertCron());
+initDB().then(() => {
+  startAlertCron();
+  startSyncCron();
+  syncAllExchanges();
+});
  
 // --- Input validation ---
 function validateInvestment(name, amount, purchase_price = null) {
@@ -453,6 +479,85 @@ app.post("/auth/reset-password", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Error resetting password");
+  }
+});
+
+// Connect exchange
+app.post("/exchanges/connect", authenticateToken, async (req, res) => {
+  const { exchange, api_key, api_secret } = req.body;
+
+  if (!exchange || !api_key || !api_secret) {
+    return res.status(400).json({ error: "exchange, api_key and api_secret required" });
+  }
+
+  if (!["binance", "coinbase"].includes(exchange)) {
+    return res.status(400).json({ error: "exchange must be binance or coinbase" });
+  }
+
+  try {
+    const result = await pool.query(`
+      INSERT INTO exchange_connections (user_id, exchange, api_key, api_secret)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (user_id, exchange) DO UPDATE
+      SET api_key = $3, api_secret = $4, last_synced_at = NULL
+      RETURNING id, exchange, last_synced_at, created_at
+    `, [req.user.id, exchange, encryptKey(api_key), encryptKey(api_secret)]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error connecting exchange");
+  }
+});
+
+// Get connected exchanges
+app.get("/exchanges", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, exchange, last_synced_at, created_at FROM exchange_connections WHERE user_id = $1",
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).send("Error fetching exchanges");
+  }
+});
+
+// Disconnect exchange
+app.delete("/exchanges/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      "DELETE FROM exchange_connections WHERE id = $1 AND user_id = $2 RETURNING id",
+      [id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).send("Connection not found");
+    res.send("Exchange disconnected");
+  } catch (err) {
+    res.status(500).send("Error disconnecting exchange");
+  }
+});
+
+// Manual sync trigger
+app.post("/exchanges/sync", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM exchange_connections WHERE user_id = $1",
+      [req.user.id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(400).json({ error: "No exchanges connected" });
+    }
+
+    for (const connection of result.rows) {
+      await syncExchange(connection);
+    }
+
+    res.json({ message: "Sync complete" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error syncing");
   }
 });
  

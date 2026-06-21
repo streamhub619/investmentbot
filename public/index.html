@@ -9,14 +9,13 @@
   <link href="style.css" rel="stylesheet">
 </head>
 <body>
- 
+
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
   <div class="login-title">INVESTMENTBOT</div>
   <div class="login-sub" id="login-sub">Sign in to your portfolio</div>
 
-  <!-- wrap these in a container -->
   <div id="login-fields">
     <div class="field" id="email-field" style="display:none">
       <label>Email (for price alerts)</label>
@@ -39,9 +38,7 @@
       <span onclick="showForgotPassword()">Forgot password?</span>
     </div>
   </div>
-  <!-- end login-fields -->
 
-  <!-- Forgot password form -->
   <div id="forgot-form" style="display:none">
     <div class="field">
       <label>Email</label>
@@ -53,7 +50,7 @@
   </div>
 </div>
 </div>
- 
+
 <!-- DASHBOARD -->
 <div id="dashboard">
   <header>
@@ -63,7 +60,7 @@
       <button class="logout-btn" onclick="logout()">LOGOUT</button>
     </div>
   </header>
- 
+
   <main>
     <!-- Stats -->
     <div class="stats-row">
@@ -80,7 +77,7 @@
         <div class="stat-value" id="stat-pnl-val">—</div>
       </div>
     </div>
- 
+
     <!-- Content grid -->
     <div class="content-grid">
       <!-- Left: table -->
@@ -88,8 +85,7 @@
         <div class="panel-header">
           <div class="panel-title">Investments</div>
         </div>
- 
-        <!-- Add form -->
+
         <div class="add-form">
           <div class="field">
             <label>Coin ID</label>
@@ -105,7 +101,7 @@
           </div>
           <button class="btn btn-sm" style="grid-column:1/-1;width:100%" onclick="addInvestment()">+ ADD INVESTMENT</button>
         </div>
- 
+
         <table>
           <thead>
             <tr>
@@ -123,7 +119,7 @@
           </tbody>
         </table>
       </div>
- 
+
       <!-- Right: chart -->
       <div class="panel">
         <div class="panel-header">
@@ -135,9 +131,97 @@
         </div>
       </div>
     </div>
+
+    <!-- Price Alerts panel -->
+    <div class="panel" style="margin-top:24px">
+      <div class="panel-header">
+        <div class="panel-title">Price Alerts</div>
+      </div>
+
+      <!-- Add alert form -->
+      <div class="add-form" style="grid-template-columns:1fr 1fr 1fr auto">
+        <div class="field">
+          <label>Coin ID</label>
+          <input type="text" id="alert-coin" placeholder="bitcoin"/>
+        </div>
+        <div class="field">
+          <label>Target Price (USD)</label>
+          <input type="number" id="alert-price" placeholder="100000" step="any" min="0"/>
+        </div>
+        <div class="field">
+          <label>Direction</label>
+          <select id="alert-direction">
+            <option value="above">Above target</option>
+            <option value="below">Below target</option>
+          </select>
+        </div>
+        <button class="btn btn-sm" style="grid-column:1/-1;width:100%" onclick="addAlert()">+ ADD ALERT</button>
+      </div>
+
+      <!-- Alerts table -->
+      <table>
+        <thead>
+          <tr>
+            <th>Coin</th>
+            <th>Direction</th>
+            <th>Target Price</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="alerts-tbody">
+          <tr class="loading-row"><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Connected Exchanges panel -->
+    <div class="panel" style="margin-top:24px">
+      <div class="panel-header">
+        <div class="panel-title">Connected Exchanges</div>
+        <button class="btn btn-sm btn-outline" onclick="syncExchanges()" id="sync-btn">↻ SYNC NOW</button>
+      </div>
+
+      <!-- Connect form -->
+      <div class="add-form" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="field">
+          <label>Exchange</label>
+          <select id="exchange-name">
+            <option value="binance">Binance</option>
+            <option value="coinbase">Coinbase</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>API Key</label>
+          <input type="text" id="exchange-key" placeholder="your api key"/>
+        </div>
+        <div class="field">
+          <label>API Secret</label>
+          <input type="password" id="exchange-secret" placeholder="your api secret"/>
+        </div>
+        <button class="btn btn-sm" style="grid-column:1/-1;width:100%" onclick="connectExchange()">+ CONNECT EXCHANGE</button>
+      </div>
+
+      <!-- Connected exchanges table -->
+      <table>
+        <thead>
+          <tr>
+            <th>Exchange</th>
+            <th>Status</th>
+            <th>Last Synced</th>
+            <th>Connected</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="exchanges-tbody">
+          <tr class="loading-row"><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </main>
 </div>
- 
+
 <!-- Edit Modal -->
 <div id="modal-overlay">
   <div class="modal">
@@ -159,11 +243,11 @@
     <button class="btn" onclick="saveEdit()">SAVE CHANGES</button>
   </div>
 </div>
- 
+
 <!-- Toast -->
 <div id="toast"></div>
 
-<script src="script.js"></script> 
+<script src="script.js"></script>
 
 </body>
 </html>
