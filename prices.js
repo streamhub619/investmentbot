@@ -38,7 +38,7 @@ async function getAllPrices(coinIds) {
       for (const coinId of toFetch) {
         const price = data?.[coinId]?.usd;
         if (price) {
-          await redis.set(`price:${coinId}`, price, "EX", 60);
+          await redis.set(`price:${coinId}`, price, "EX", 600);
           prices[coinId] = price;
         } else {
           console.log(`No price found for: ${coinId}`);
