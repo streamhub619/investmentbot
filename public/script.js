@@ -1,4 +1,4 @@
-const API = 'http://localhost:3000';
+const API = 'https://investmentbot1-bx169kr4.b4a.run/';
 let token = null;
 let username = null;
 let chart = null;
