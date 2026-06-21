@@ -1,4 +1,4 @@
-const API = 'https://investmentbot1-bx169kr4.b4a.run/';
+const API = 'https://investmentbot-qomu.onrender.com';
 let token = null;
 let username = null;
 let chart = null;
